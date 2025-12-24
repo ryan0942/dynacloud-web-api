@@ -1,0 +1,121 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Status } from '@prisma/client';
+
+export class UpdateCaseDto {
+  @ApiProperty({
+    description: '中文標題'required: false
+  })
+  @IsString()
+  @IsOptional()
+  zh_title?: string;
+
+  @ApiProperty({
+    description: '英文標題'required: false
+  })
+  @IsString()
+  @IsOptional()
+  en_title?: string;
+
+  @ApiProperty({
+    description: '中文描述'required: false
+  })
+  @IsString()
+  @IsOptional()
+  zh_description?: string;
+
+  @ApiProperty({
+    description: '英文描述'required: false
+  })
+  @IsString()
+  @IsOptional()
+  en_description?: string;
+
+  @ApiProperty({
+    description: '封面圖片'required: false
+  })
+  @IsString()
+  @IsOptional()
+  cover?: string;
+
+  @ApiProperty({
+    description: '公司 Logo'required: false
+  })
+  @IsString()
+  @IsOptional()
+  company_logo?: string;
+
+  @ApiProperty({
+    description: '中文公司名稱'required: false
+  })
+  @IsString()
+  @IsOptional()
+  zh_company_name?: string;
+
+  @ApiProperty({
+    description: '英文公司名稱'required: false
+  })
+  @IsString()
+  @IsOptional()
+  en_company_name?: string;
+
+  @ApiProperty({
+    description: '中文公司描述'required: false
+  })
+  @IsString()
+  @IsOptional()
+  zh_company_description?: string;
+
+  @ApiProperty({
+    description: '英文公司描述's largest dedicated semiconductor foundry',
+    required: false
+  })
+  @IsString()
+  @IsOptional()
+  en_company_description?: string;
+
+  @ApiProperty({
+    description: '中文公司職稱'required: false
+  })
+  @IsString()
+  @IsOptional()
+  zh_company_title?: string;
+
+  @ApiProperty({
+    description: '英文公司職稱'required: false
+  })
+  @IsString()
+  @IsOptional()
+  en_company_title?: string;
+
+  @ApiProperty({
+    description: '中文標籤（逗號分隔）'required: false
+  })
+  @IsString()
+  @IsOptional()
+  zh_tags?: string;
+
+  @ApiProperty({
+    description: '英文標籤（逗號分隔）'required: false
+  })
+  @IsString()
+  @IsOptional()
+  en_tags?: string;
+
+  @ApiProperty({
+    description: '分類 ID'required: false
+  })
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @ApiProperty({
+    description: '狀態',
+    enum: Status,
+    example: Status.Active,
+    required: false
+  })
+  @IsEnum(Status)
+  @IsOptional()
+  status?: Status;
+}

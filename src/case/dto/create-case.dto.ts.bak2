@@ -1,0 +1,105 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { Status } from '@prisma/client';
+
+export class CreateCaseDto {
+  @ApiProperty({
+    description: '中文標題'})
+  @IsString()
+  @IsNotEmpty()
+  zh_title: string;
+
+  @ApiProperty({
+    description: '英文標題'})
+  @IsString()
+  @IsNotEmpty()
+  en_title: string;
+
+  @ApiProperty({
+    description: '中文描述'})
+  @IsString()
+  @IsNotEmpty()
+  zh_description: string;
+
+  @ApiProperty({
+    description: '英文描述'})
+  @IsString()
+  @IsNotEmpty()
+  en_description: string;
+
+  @ApiProperty({
+    description: '封面圖片'})
+  @IsString()
+  @IsNotEmpty()
+  cover: string;
+
+  @ApiProperty({
+    description: '公司 Logo'})
+  @IsString()
+  @IsNotEmpty()
+  company_logo: string;
+
+  @ApiProperty({
+    description: '中文公司名稱'})
+  @IsString()
+  @IsNotEmpty()
+  zh_company_name: string;
+
+  @ApiProperty({
+    description: '英文公司名稱'})
+  @IsString()
+  @IsNotEmpty()
+  en_company_name: string;
+
+  @ApiProperty({
+    description: '中文公司描述'})
+  @IsString()
+  @IsNotEmpty()
+  zh_company_description: string;
+
+  @ApiProperty({
+    description: '英文公司描述's largest dedicated semiconductor foundry'
+  })
+  @IsString()
+  @IsNotEmpty()
+  en_company_description: string;
+
+  @ApiProperty({
+    description: '中文公司職稱'})
+  @IsString()
+  @IsNotEmpty()
+  zh_company_title: string;
+
+  @ApiProperty({
+    description: '英文公司職稱'})
+  @IsString()
+  @IsNotEmpty()
+  en_company_title: string;
+
+  @ApiProperty({
+    description: '中文標籤（逗號分隔）'})
+  @IsString()
+  @IsNotEmpty()
+  zh_tags: string;
+
+  @ApiProperty({
+    description: '英文標籤（逗號分隔）'})
+  @IsString()
+  @IsNotEmpty()
+  en_tags: string;
+
+  @ApiProperty({
+    description: '分類 ID'})
+  @IsString()
+  @IsNotEmpty()
+  categoryId: string;
+
+  @ApiProperty({
+    description: '狀態',
+    enum: Status,
+    example: Status.Draft
+  })
+  @IsEnum(Status)
+  @IsNotEmpty()
+  status: Status;
+}

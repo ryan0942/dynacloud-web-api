@@ -1,0 +1,257 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "mysql" // MariaDB 使用 mysql driver
+  url      = env("DATABASE_URL") // 資料庫連線字串
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ** 管理員資料表
+model Admin {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  account   String    @unique
+  avatar    String?
+  password  String
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// ** Banner 類型枚舉
+enum BannerType {
+  IMAGE // 圖片
+  VIDEO // 影片
+}
+
+// ** 首頁輪播圖資料表
+model Banner {
+  id        String     @id @default(uuid())
+
+  // 語言顯示控制
+  showInZh Boolean @default(true)
+  showInEn Boolean @default(true)
+
+  // 中文版欄位
+  zh_image String? // 圖片（IMAGE 類型時必填）
+  zh_url   String? // 影片連結（VIDEO 類型時必填）
+  zh_link  String? // 點擊連結（非必填）
+
+  // 英文版欄位
+  en_image String?
+  en_url   String?
+  en_link  String?
+
+  duration  Int?       @default(3)
+  type      BannerType
+  sortOrder Int        @default(0)
+  createdAt DateTime?  @default(now())
+  updatedAt DateTime?  @updatedAt
+}
+
+// ** 產品服務類別 ServiceCategory
+model ServiceCategory {
+  id        String    @id @default(uuid())
+  zh_name   String
+  en_name   String
+  services  Service[] // 反向關聯：一個分類可以有多個產品服務
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// ** 產品服務 Service
+model Service {
+  id             String          @id @default(uuid())
+  showInZh       Boolean         @default(true)
+  showInEn       Boolean         @default(true)
+  icon           String
+  logo           String
+  cover          String
+  zh_title       String
+  en_title       String
+  zh_description String
+  en_description String
+  zh_content     String          @db.Text
+  en_content     String          @db.Text
+  status         Status          @default(Draft)
+  categoryId     String
+  category       ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt      DateTime?       @default(now())
+  updatedAt      DateTime?       @updatedAt
+}
+
+// ** 狀態
+enum Status {
+  Active // 上架
+  Draft // 草稿
+  Closed // 已下架
+}
+
+// ** 媒體活動 News 類型
+model NewsCategory {
+  id        String    @id @default(uuid())
+  zh_name   String
+  en_name   String
+  news      News[] // 反向關聯：一個分類可以有多篇新聞
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+}
+
+// ** 媒體活動 News
+model News {
+  id             String       @id @default(uuid())
+
+  // 語言顯示控制
+  showInZh Boolean @default(true)
+  showInEn Boolean @default(true)
+
+  zh_title       String
+  en_title       String
+  cover          String
+  zh_description String
+  en_description String
+  categoryId     String
+  category       NewsCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  zh_content     String       @db.Text
+  en_content     String       @db.Text
+  zh_tags        String
+  en_tags        String
+  startDateTime  String
+  endDateTime    String
+  status         Status       @default(Draft)
+  createdAt      DateTime?    @default(now())
+  updatedAt      DateTime?    @updatedAt
+}
+
+// ** 部落格類別
+model BlogCategory {
+  id        String    @id @default(uuid())
+  zh_name   String
+  en_name   String
+  blogs     Blog[] // 反向關聯：一個分類可以有多篇部落格
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// ** 部落格 Blog
+model Blog {
+  id             String       @id @default(uuid())
+
+  // 語言顯示控制
+  showInZh Boolean @default(true)
+  showInEn Boolean @default(true)
+
+  zh_title       String
+  en_title       String
+  zh_description String
+  en_description String
+  cover          String
+  categoryId     String
+  category       BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  zh_content     String       @db.Text
+  en_content     String       @db.Text
+  zh_tags        String
+  en_tags        String
+  status         Status       @default(Draft)
+  createdAt      DateTime?    @default(now())
+  updatedAt      DateTime?    @updatedAt
+}
+
+// ** 案例分享類別
+model CaseCategory {
+  id        String    @id @default(uuid())
+  zh_name   String
+  en_name   String
+  cases     Case[] // 反向關聯：一個分類可以有多個案例
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// ** 案例分享 Case
+model Case {
+  id                     String       @id @default(uuid())
+
+  // 語言顯示控制
+  showInZh Boolean @default(true)
+  showInEn Boolean @default(true)
+
+  zh_title               String
+  en_title               String
+  zh_description         String
+  en_description         String
+  cover                  String
+  company_logo           String
+  zh_company_name        String
+  en_company_name        String
+  zh_company_description String
+  en_company_description String
+  zh_company_title       String
+  en_company_title       String
+  zh_tags                String
+  en_tags                String
+  zh_content             String       @db.Text
+  en_content             String       @db.Text
+  categoryId             String
+  category               CaseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  status                 Status       @default(Draft)
+  createdAt              DateTime?    @default(now())
+  updatedAt              DateTime?    @updatedAt
+}
+
+// ** 合作客戶
+model Customer {
+  id        String    @id @default(uuid())
+  zh_name   String
+  en_name   String
+  logo      String
+  url       String?
+  sortOrder Int       @default(0)
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// ** 公司基本資訊
+model CompanyInfo {
+  id              String    @id @default(uuid())
+  zh_address      String
+  en_address      String
+  zh_phone        String
+  en_phone        String
+  zh_email        String
+  en_email        String
+  zh_opening_time String
+  en_opening_time String
+  createdAt       DateTime? @default(now())
+  updatedAt       DateTime? @updatedAt
+}
+
+// ** 關於我們
+model About {
+  id         String    @id @default(uuid())
+  zh_content String?   @default("") @db.Text
+  en_content String?   @default("") @db.Text
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+}
+
+// ** 聯絡我們
+model Contact {
+  id        String    @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  message   String    @db.VarChar(1000)
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// ** 隱私權政策
+model PrivacyPolicy {
+  id         String    @id @default(uuid())
+  zh_content String?   @default("") @db.Text
+  en_content String?   @default("") @db.Text
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+}

@@ -1,0 +1,388 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Status } from '@prisma/client';
+import { PrismaService } from '../prisma.service';
+
+export interface CreateBlogDto {
+  showInZh?: boolean;
+  showInEn?: boolean;
+  zh_title?: string;
+  en_title?: string;
+  cover: string;
+  zh_description?: string;
+  en_description?: string;
+  categoryId: string;
+  zh_content?: string;
+  en_content?: string;
+  zh_tags?: string;
+  en_tags?: string;
+  status?: Status;
+}
+
+export interface UpdateBlogDto {
+  showInZh?: boolean;
+  showInEn?: boolean;
+  zh_title?: string;
+  en_title?: string;
+  cover?: string;
+  zh_description?: string;
+  en_description?: string;
+  categoryId?: string;
+  zh_content?: string;
+  en_content?: string;
+  zh_tags?: string;
+  en_tags?: string;
+  status?: Status;
+}
+
+export interface FindAllBlogParams {
+  page?: number;
+  limit?: number;
+  categoryId?: string;
+  query?: string;
+  language?: string;
+}
+
+export interface FindAllByAdminParams {
+  page?: number;
+  limit?: number;
+  categoryId?: string;
+  query?: string;
+  status?: Status;
+  language?: string;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  has_next: boolean;
+  total: number;
+}
+
+export interface PaginatedBlogResult {
+  data: any[];
+  pagination: PaginationInfo;
+}
+
+@Injectable()
+export class BlogService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  // 根據語系轉換分類數據
+  private transformCategoryByLanguage(category: any, language: string) {
+    if (!category) return null;
+    const isZh = language === 'zh' || language === 'zh-TW' || language === 'zh-CN';
+
+    return {
+      id: category.id,
+      name: isZh ? category.zh_name : category.en_name,
+    };
+  }
+
+  // 根據語系轉換部落格數據
+  private transformByLanguage(data: any, language: string, includeContent: boolean = true) {
+    const isZh = language === 'zh' || language === 'zh-TW' || language === 'zh-CN';
+
+    const result: any = {
+      id: data.id,
+      title: isZh ? data.zh_title : data.en_title,
+      cover: data.cover,
+      description: isZh ? data.zh_description : data.en_description,
+      category: this.transformCategoryByLanguage(data.category, language),
+      tags: isZh ? data.zh_tags : data.en_tags,
+      status: data.status,
+      updatedAt: data.updatedAt,
+    };
+
+    // 只在需要時包含 content（避免列表頁流量過大）
+    if (includeContent) {
+      result.content = isZh ? data.zh_content : data.en_content;
+    }
+
+    return result;
+  }
+
+  // 驗證語言顯示設定
+  private validateLanguageSettings(showInZh: boolean, showInEn: boolean): void {
+    if (!showInZh && !showInEn) {
+      throw new BadRequestException('至少需選擇一個顯示語言（中文或英文）');
+    }
+  }
+
+  // 內部方法：獲取原始數據（用於 update 和 remove）
+  private async _findOneRaw(id: string) {
+    const blog = await this.prisma.blog.findUnique({
+      where: { id },
+      include: {
+        category: true,
+      },
+    });
+
+    if (!blog) {
+      throw new NotFoundException('部落格不存在');
+    }
+
+    return blog;
+  }
+
+  // 創建部落格
+  async create(data: CreateBlogDto) {
+    const showInZh = data.showInZh ?? true;
+    const showInEn = data.showInEn ?? true;
+
+    // 驗證語言設定
+    this.validateLanguageSettings(showInZh, showInEn);
+
+    // 驗證必填字段
+    if (!data.cover) {
+      throw new BadRequestException('封面圖片不能為空');
+    }
+
+    if (!data.categoryId) {
+      throw new BadRequestException('分類不能為空');
+    }
+
+    // 驗證分類是否存在
+    const category = await this.prisma.blogCategory.findUnique({
+      where: { id: data.categoryId },
+    });
+
+    if (!category) {
+      throw new BadRequestException('指定的部落格分類不存在');
+    }
+
+    return await this.prisma.blog.create({
+      data: {
+        showInZh,
+        showInEn,
+        zh_title: data.zh_title ?? '',
+        en_title: data.en_title ?? '',
+        cover: data.cover,
+        zh_description: data.zh_description ?? '',
+        en_description: data.en_description ?? '',
+        categoryId: data.categoryId,
+        zh_content: data.zh_content ?? '',
+        en_content: data.en_content ?? '',
+        zh_tags: data.zh_tags ?? '',
+        en_tags: data.en_tags ?? '',
+        status: data.status || Status.Draft,
+      },
+      include: {
+        category: true,
+      },
+    });
+  }
+
+  // 獲取所有部落格（帶分頁和搜索）
+  async findAll(params: FindAllBlogParams): Promise<PaginatedBlogResult> {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const limit = params.limit && params.limit > 0 ? params.limit : 25;
+    const skip = (page - 1) * limit;
+    const language = params.language || 'en';
+    const isZh = language === 'zh' || language === 'zh-TW' || language === 'zh-CN';
+
+    // 構建查詢條件
+    const where: any = {
+      status: Status.Active, // 只返回 Active 狀態的部落格
+      // 根據語言篩選顯示的部落格
+      ...(isZh ? { showInZh: true } : { showInEn: true }),
+    };
+
+    // 分類篩選
+    if (params.categoryId) {
+      where.categoryId = params.categoryId;
+    }
+
+    // 文字搜索
+    if (params.query && params.query.trim()) {
+      where.OR = [
+        { zh_title: { contains: params.query } },
+        { en_title: { contains: params.query } },
+        { zh_description: { contains: params.query } },
+        { en_description: { contains: params.query } },
+        { zh_tags: { contains: params.query } },
+        { en_tags: { contains: params.query } },
+      ];
+    }
+
+    // 獲取總記錄數
+    const total = await this.prisma.blog.count({ where });
+
+    // 獲取分頁數據
+    const rawData = await this.prisma.blog.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        category: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // 根據語系轉換數據（列表頁不包含 content 以減少流量）
+    const data = rawData.map((blog) => this.transformByLanguage(blog, language, false));
+
+    // 計算是否有下一頁
+    const has_next = skip + data.length < total;
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        has_next,
+        total,
+      },
+    };
+  }
+
+  // 根據 ID 獲取單個部落格
+  async findOne(id: string, language: string = 'en') {
+    const blog = await this._findOneRaw(id);
+    return this.transformByLanguage(blog, language);
+  }
+
+  // 管理員根據 ID 獲取單個部落格（不進行語系轉換，返回完整數據）
+  async findOneByAdmin(id: string) {
+    return await this._findOneRaw(id);
+  }
+
+  // 更新部落格
+  async update(id: string, data: UpdateBlogDto) {
+    // 先檢查部落格是否存在
+    const existingBlog = await this._findOneRaw(id);
+
+    // 驗證語言設定
+    const showInZh = data.showInZh ?? existingBlog.showInZh;
+    const showInEn = data.showInEn ?? existingBlog.showInEn;
+    this.validateLanguageSettings(showInZh, showInEn);
+
+    // 如果要更新分類，驗證分類是否存在
+    if (data.categoryId) {
+      const category = await this.prisma.blogCategory.findUnique({
+        where: { id: data.categoryId },
+      });
+
+      if (!category) {
+        throw new BadRequestException('指定的部落格分類不存在');
+      }
+    }
+
+    return await this.prisma.blog.update({
+      where: { id },
+      data: {
+        ...(data.showInZh !== undefined && { showInZh: data.showInZh }),
+        ...(data.showInEn !== undefined && { showInEn: data.showInEn }),
+        ...(data.zh_title !== undefined && { zh_title: data.zh_title }),
+        ...(data.en_title !== undefined && { en_title: data.en_title }),
+        ...(data.cover !== undefined && { cover: data.cover }),
+        ...(data.zh_description !== undefined && {
+          zh_description: data.zh_description,
+        }),
+        ...(data.en_description !== undefined && {
+          en_description: data.en_description,
+        }),
+        ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+        ...(data.zh_content !== undefined && { zh_content: data.zh_content }),
+        ...(data.en_content !== undefined && { en_content: data.en_content }),
+        ...(data.zh_tags !== undefined && { zh_tags: data.zh_tags }),
+        ...(data.en_tags !== undefined && { en_tags: data.en_tags }),
+        ...(data.status !== undefined && { status: data.status }),
+      },
+      include: {
+        category: true,
+      },
+    });
+  }
+
+  // 刪除部落格
+  async remove(id: string) {
+    // 先檢查部落格是否存在
+    await this._findOneRaw(id);
+
+    await this.prisma.blog.delete({
+      where: { id },
+    });
+
+    return { message: '部落格已成功刪除' };
+  }
+
+  // 管理員獲取所有部落格（不進行語系轉換，返回完整數據）
+  async findAllByAdmin(params: FindAllByAdminParams): Promise<PaginatedBlogResult> {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const limit = params.limit && params.limit > 0 ? params.limit : 25;
+    const skip = (page - 1) * limit;
+
+    // 構建查詢條件
+    const where: any = {};
+
+    // 根據語言篩選
+    if (params.language) {
+      const isZh =
+        params.language === 'zh' ||
+        params.language === 'zh-TW' ||
+        params.language === 'zh-CN';
+      if (isZh) {
+        where.showInZh = true;
+      } else {
+        where.showInEn = true;
+      }
+    }
+
+    // 狀態篩選（可選）
+    if (params.status) {
+      where.status = params.status;
+    }
+
+    // 分類篩選
+    if (params.categoryId) {
+      where.categoryId = params.categoryId;
+    }
+
+    // 文字搜索
+    if (params.query && params.query.trim()) {
+      where.OR = [
+        { zh_title: { contains: params.query } },
+        { en_title: { contains: params.query } },
+        { zh_description: { contains: params.query } },
+        { en_description: { contains: params.query } },
+        { zh_tags: { contains: params.query } },
+        { en_tags: { contains: params.query } },
+      ];
+    }
+
+    // 獲取總記錄數
+    const total = await this.prisma.blog.count({ where });
+
+    // 獲取分頁數據
+    const data = await this.prisma.blog.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        category: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // 計算是否有下一頁
+    const has_next = skip + data.length < total;
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        has_next,
+        total,
+      },
+    };
+  }
+}

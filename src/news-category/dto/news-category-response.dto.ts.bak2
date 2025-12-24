@@ -1,0 +1,138 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+export class NewsCategoryDto {
+  @ApiProperty({
+    description: '分類 ID'
+  })
+  id: string;
+
+  @ApiProperty({
+    description: '中文分類名稱'
+  })
+  zh_name: string;
+
+  @ApiProperty({
+    description: '英文分類名稱'
+  })
+  en_name: string;
+
+  @ApiProperty({
+    description: '建立時間',
+    nullable: true
+  })
+  createdAt: Date | null;
+
+  @ApiProperty({
+    description: '更新時間',
+    nullable: true
+  })
+  updatedAt: Date | null;
+
+  @ApiProperty({
+    description: '刪除時間（軟刪除）',
+    example: null,
+    nullable: true
+  })
+  deletedAt: Date | null;
+}
+
+export class NewsCategoryLocalizedDto {
+  @ApiProperty({
+    description: '分類 ID'
+  })
+  id: string;
+
+  @ApiProperty({
+    description: '分類名稱（根據語系顯示）'
+  })
+  name: string;
+}
+
+export class NewsCategoryResponseDto {
+  @ApiProperty({
+    description: '是否成功'
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: '回傳資料',
+    type: () => NewsCategoryDto
+  })
+  result: NewsCategoryDto;
+
+  @ApiProperty({
+    description: '回傳訊息'
+  })
+  message: string;
+}
+
+export class NewsCategoryListResponseDto {
+  @ApiProperty({
+    description: '是否成功'
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: '回傳資料',
+    type: () => [NewsCategoryDto]
+  })
+  result: NewsCategoryDto[];
+
+  @ApiProperty({
+    description: '回傳訊息'
+  })
+  message: string;
+}
+
+export class NewsCategoryLocalizedListResponseDto {
+  @ApiProperty({
+    description: '是否成功'
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: '回傳資料（語系轉換後）',
+    type: () => [NewsCategoryLocalizedDto]
+  })
+  result: NewsCategoryLocalizedDto[];
+
+  @ApiProperty({
+    description: '回傳訊息'
+  })
+  message: string;
+}
+
+export class NewsCategoryLocalizedResponseDto {
+  @ApiProperty({
+    description: '是否成功'
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: '回傳資料（語系轉換後）',
+    type: () => NewsCategoryLocalizedDto
+  })
+  result: NewsCategoryLocalizedDto;
+
+  @ApiProperty({
+    description: '回傳訊息'
+  })
+  message: string;
+}
+
+export class NewsCategoryDeleteResponseDto {
+  @ApiProperty({
+    description: '是否成功'
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: '回傳資料'
+  })
+  result: { message: string };
+
+  @ApiProperty({
+    description: '回傳訊息'
+  })
+  message: string;
+}
