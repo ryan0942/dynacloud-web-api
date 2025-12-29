@@ -1,0 +1,38 @@
+
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+yarn.lock
+
+# Build
+dist
+build
+coverage
+
+# Environment
+.env
+.env.production
+.env.development
+env
+
+# IDE
+.vscode
+.idea
+.cursor
+.gemini
+*.swp
+*.swo
+
+# Sytem
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Cloud
+gcs-key.json
