@@ -13,7 +13,7 @@ export class GcsStorageService {
     const keyPath = path.join(__dirname, '../../gcs-key.json');
 
     this.storage = new Storage({
-      keyFilename: keyPath,
+      // keyFilename: keyPath,
       projectId: process.env.GCP_PROJECT_ID,
     });
 

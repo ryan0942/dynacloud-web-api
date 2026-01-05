@@ -13,7 +13,7 @@ build
 coverage
 
 # Environment
-.env
+#.env
 .env.production
 .env.development
 env

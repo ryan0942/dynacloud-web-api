@@ -3,6 +3,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+COPY .env .env
+
 # Copy dependency definitions
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -15,7 +17,7 @@ COPY . .
 
 # Generate Prisma client and build the application
 # Set dummy database URL for build time (Prisma requirement)
-ENV DATABASE_URL="mysql://root:password@localhost:3306/dynacloud"
+ENV DATABASE_URL="mysql://root:rootpassword@localhost:3306/dynacloud"
 
 RUN npx prisma generate
 RUN npm run build
@@ -26,6 +28,7 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 # Copy dependency definitions to install only production dependencies
+COPY --from=builder /app/.env ./
 COPY package*.json ./
 COPY prisma ./prisma/
 COPY tsconfig*.json ./
