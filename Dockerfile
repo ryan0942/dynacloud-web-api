@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:22.23.4-alpine AS builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage
-FROM node:22-alpine AS runner
+FROM node:22.23.4-alpine AS runner
 
 WORKDIR /app
 
