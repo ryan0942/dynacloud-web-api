@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Status } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { isPubliclyVisible } from '../common/utils/public-visibility';
 
 export interface CreateCaseDto {
   showInZh?: boolean;
@@ -271,6 +272,9 @@ export class CaseService {
   // 根據 ID 獲取單個案例
   async findOne(id: string, language: string = 'en') {
     const caseData = await this._findOneRaw(id);
+    if (!isPubliclyVisible(caseData, language)) {
+      throw new NotFoundException('案例不存在');
+    }
     return this.transformByLanguage(caseData, language);
   }
 

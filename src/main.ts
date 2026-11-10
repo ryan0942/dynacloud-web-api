@@ -1,8 +1,11 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
+import { trustProxyHops } from './common/utils/throttle';
 
 // 修改文檔中 accept-language header 為非必填並移除重複
 function processSwaggerDocument(document: any) {
@@ -65,7 +68,14 @@ function filterDocumentByTags(document: any, tags: string[]) {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // 取得真實的來源 IP（給限流用），見 common/utils/throttle.ts
+  app.set('trust proxy', trustProxyHops());
+
+  // DTO 驗證：whitelist 會丟掉 DTO 沒定義的欄位，避免 mass assignment（例如 PUT /admin/me 帶 password）
+  // 不開 forbidNonWhitelisted（後台送出的資料可能夾帶 id、createdAt 等欄位），不開 transform（不改變 query 型別）
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   // 從 DI 容器中取得 Reflector 實例
   const reflector = app.get(Reflector);
@@ -161,7 +171,7 @@ async function bootstrap() {
 
   // 設置 JSON 端點
   Object.entries(documentGroups).forEach(([key, group]) => {
-    app.getHttpAdapter().get(`/api-docs-${key}-json`, (_req, res) => {
+    app.getHttpAdapter().get(`/api-docs-${key}-json`, (_req: unknown, res: { json: (body: unknown) => void }) => {
       res.json(group.document);
     });
   });

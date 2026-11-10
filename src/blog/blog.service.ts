@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Status } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { isPubliclyVisible } from '../common/utils/public-visibility';
 
 export interface CreateBlogDto {
   showInZh?: boolean;
@@ -244,6 +245,9 @@ export class BlogService {
   // 根據 ID 獲取單個部落格
   async findOne(id: string, language: string = 'en') {
     const blog = await this._findOneRaw(id);
+    if (!isPubliclyVisible(blog, language)) {
+      throw new NotFoundException('部落格不存在');
+    }
     return this.transformByLanguage(blog, language);
   }
 

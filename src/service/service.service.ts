@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Status } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { isPubliclyVisible } from '../common/utils/public-visibility';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
@@ -293,6 +294,9 @@ export class ServiceService {
   // 根據 ID 獲取單個產品服務（用戶端，語系轉換）
   async findOne(id: string, language: string = 'en') {
     const service = await this._findOneRaw(id);
+    if (!isPubliclyVisible(service, language)) {
+      throw new NotFoundException('產品服務不存在');
+    }
     return this.transformByLanguage(service, language, true);
   }
 

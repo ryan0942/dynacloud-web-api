@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma.service';
 
 import { ThrottlerModule } from '@nestjs/throttler';
+import { skipThrottleForTrustedReads } from './common/utils/throttle';
 
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
@@ -24,12 +25,16 @@ import { PrivacyPolicyModule } from './privacy-policy/privacy-policy.module';
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 30,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 30,
+        },
+      ],
+      // 前台、後台伺服器發出的 GET 不限流（見 common/utils/throttle.ts）
+      skipIf: skipThrottleForTrustedReads,
+    }),
     ConfigModule.forRoot(),
     AuthModule,
     AdminModule,

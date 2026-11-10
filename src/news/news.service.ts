@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Status } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { isPubliclyVisible } from '../common/utils/public-visibility';
 
 export interface CreateNewsDto {
   showInZh?: boolean;
@@ -252,6 +253,9 @@ export class NewsService {
   // 根據 ID 獲取單個新聞
   async findOne(id: string, language: string = 'en') {
     const news = await this._findOneRaw(id);
+    if (!isPubliclyVisible(news, language)) {
+      throw new NotFoundException('新聞不存在');
+    }
     return this.transformByLanguage(news, language);
   }
 

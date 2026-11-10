@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { BannerType as PrismaBannerType } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { isPubliclyVisible } from '../common/utils/public-visibility';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { UpdateBannerSortDto } from './dto/update-banner-sort.dto';
@@ -164,7 +165,7 @@ export class BannerService {
       where: { id },
     });
 
-    if (!banner) {
+    if (!banner || !isPubliclyVisible(banner, language)) {
       throw new NotFoundException('Banner 不存在');
     }
 
